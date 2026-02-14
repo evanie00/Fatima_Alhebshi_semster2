@@ -16,8 +16,17 @@ class _LocalStorageAssignmentState extends State<LocalStorageAssignment> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(
+        primaryColor: Colors.pinkAccent[100], // اللون الأساسي
+        colorScheme: ColorScheme.fromSwatch().copyWith(
+          primary: Colors.pinkAccent[100],
+        ),
+      ),
       debugShowCheckedModeBanner: false,
-      home: HomeView(),
+      home: Directionality(
+        textDirection: TextDirection.rtl,
+        child: const HomeView(),
+      ),
     );
   }
 }

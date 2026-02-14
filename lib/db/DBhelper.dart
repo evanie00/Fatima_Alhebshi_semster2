@@ -50,4 +50,25 @@ class DatabaseHelper {
       return Notes.fromJson(maps[i]);
     });
   }
+
+  Future<void> deleteNote(Notes note) async {
+    var dbn = await database;
+    int? id = note.id;
+    await dbn?.delete(
+      tableUser,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> updateNote(Notes note) async {
+    var dbn = await database;
+    int? id = note.id;
+    await dbn?.update(
+      tableUser,
+      note.toJson(),
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
 }

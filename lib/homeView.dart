@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:localstorageassignment/Note.dart';
 import 'package:localstorageassignment/db/DBhelper.dart';
 
-class HomeView extends StatelessWidget {
+class HomeView extends StatefulWidget {
   const HomeView({super.key});
 
+  @override
+  State<HomeView> createState() => _HomeviewState();
+}
+
+class _HomeviewState extends State<HomeView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -15,7 +20,7 @@ class HomeView extends StatelessWidget {
       ),
       body: getNotes(),
       floatingActionButton: _buildButton(context),
-    );
+    );;
   }
 
   getNotes() {
@@ -62,21 +67,39 @@ class HomeView extends StatelessWidget {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text("إضافة ملاحظة"),
+          title: const Text("إضافة ملاحظة", textDirection: TextDirection.rtl,),
           content: SizedBox(
             width: 350, // العرض المطلوب
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(labelText: "العنوان"),
+                Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: TextField(
+                    controller: titleController,
+                    decoration: const InputDecoration(
+                      labelText: "العنوان",
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey), // خط رمادي عادي
+                      ),
+                    ),
+                  ),
                 ),
-                TextField(
-                  controller: contentController,
-                  decoration: const InputDecoration(labelText: "الملاحظة"),
-                  maxLines: 3, // يخلي مربع الملاحظة أكبر
+                Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: TextField(
+                    controller: contentController,
+                    textDirection: TextDirection.rtl,
+                    decoration: const InputDecoration(
+                      labelText: "الملاحظة",
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey), // خط رمادي عادي
+                      ),
+                    ),
+                    maxLines: 3,
+                  ),
                 ),
+
               ],
             ),
           ),
@@ -105,18 +128,141 @@ class HomeView extends StatelessWidget {
     );
   }
 
+  void _updateNoteDialog(BuildContext context, Notes mynote) {
+    final titleController = TextEditingController(text: mynote.title);
+    final contentController = TextEditingController(text: mynote.contents);
+
+    showDialog(
+      useSafeArea: true,
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text("تعديل الملاحظة", textDirection: TextDirection.rtl,),
+          content: SizedBox(
+            width: 350, // العرض المطلوب
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  textDirection: TextDirection.rtl,
+                  controller: titleController,
+                  decoration: InputDecoration(
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey), // خط رمادي عادي
+                    ),
+                  ),
+                ),
+                TextField(
+                  textDirection: TextDirection.rtl,
+                  controller: contentController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey), // خط رمادي عادي
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: const Text("إلغاء", style: TextStyle(color: Colors.black87)),
+              onPressed: () => Navigator.of(ctx).pop(),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.pinkAccent[100]),
+              child: const Text("حفظ التعديلات", style: TextStyle(color: Colors.white),),
+              onPressed: () async {
+                var note = Notes(
+                  id: mynote.id,
+                  title: titleController.text,
+                  contents: contentController.text,
+                );
+                await DatabaseHelper.db.updateNote(note);
+                Navigator.of(ctx).pop();
+                setState(() {});
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   createListView(BuildContext context, AsyncSnapshot<List<Notes>> snapshot) {
     var notes = snapshot.data!;
-    return ListView.separated(
+    return ListView.builder(
       itemCount: notes.length,
-      separatorBuilder: (context, index) => Divider(),
       itemBuilder: (context, index) {
         var note = notes[index];
-        return ListTile(
-          title: Text(note.title?? ""),
-          subtitle: Text(note.contents?? ""),
+        return Container(
+          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: EdgeInsets.symmetric(vertical: 7),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow:[
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 10,
+                offset: Offset(0, 4)
+              )
+            ]
+          ),
+          child:
+          ListTile(
+            leading: Container(
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.pinkAccent[100]?.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.sticky_note_2_outlined, color: Colors.pinkAccent[100],),
+            ),
+            title: Text(
+              note.title?? "",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            subtitle: Padding(
+                padding: EdgeInsets.only(top: 4),
+              child: Text(
+                note.contents?? "",
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ) ,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  onPressed: () async {
+                    _updateNoteDialog(context, note);
+                  },
+                  icon: Icon(Icons.edit, size: 20),
+                ),
+                IconButton(
+                  onPressed: () async {
+                    await DatabaseHelper.db.deleteNote(note);
+                    setState(() {});
+                  },
+                  icon: Icon(Icons.delete_outline, size: 20),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
   }
 }
+
+
